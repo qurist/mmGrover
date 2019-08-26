@@ -1,0 +1,18 @@
+# In this script we will generate a small cyclic grover schedule for a given input size n
+
+from numpy import pi
+import sys
+
+n = int(sys.argv[1])
+
+beta   = pi/n
+gamma  = pi
+cyclic = int(sys.argv[2])
+
+T = 10
+t = 1
+
+print("c Small cyclic QAOA schedule for Grover on %d bits"%n)
+print("p %d %d %d"%(T, t, cyclic))
+for i in range(T):
+    print("%f %f"%(beta, gamma))

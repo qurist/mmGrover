@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2017/Debian)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: mmGrover.aux
+The style file: plain.bst
+Database file #1: mmGrover.bib
+Warning--empty journal in Farhi2000
+Warning--empty journal in Jiang2017
+Warning--empty journal in Roland2003
+You've used 4 entries,
+            2118 wiz_defined-function locations,
+            521 strings with 4580 characters,
+and the built_in function-call counts, 1106 in all, are:
+= -- 99
+> -- 61
+< -- 0
++ -- 24
+- -- 20
+* -- 75
+:= -- 206
+add.period$ -- 12
+call.type$ -- 4
+change.case$ -- 22
+chr.to.int$ -- 0
+cite$ -- 7
+duplicate$ -- 41
+empty$ -- 77
+format.name$ -- 20
+if$ -- 213
+int.to.chr$ -- 0
+int.to.str$ -- 4
+missing$ -- 4
+newline$ -- 23
+num.names$ -- 8
+pop$ -- 26
+preamble$ -- 1
+purify$ -- 18
+quote$ -- 0
+skip$ -- 29
+stack$ -- 0
+substring$ -- 38
+swap$ -- 1
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 16
+warning$ -- 3
+while$ -- 9
+width$ -- 5
+write$ -- 40
+(There were 3 warnings)

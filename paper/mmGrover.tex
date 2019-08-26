@@ -1,0 +1,408 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{fullpage}
+\usepackage{amsmath,amssymb,amsthm, graphicx,bbm,bm, color}
+\usepackage[toc,page, title,titletoc]{appendix}
+
+\usepackage{animacros}
+
+\title{QAOA for the Grover problem with multiple marked items}
+\author{Aniruddha Bapat}
+\date{}
+
+%\setlength{\parindent}{0pt}
+
+\begin{document}
+\maketitle
+\section{Introduction}
+We consider the analog version of Grover's algorithm for a number of marked items $m$ that is unknown. The goal is to achieve a generalization of the work done in \cite{Jiang2017, Kato2005} on analog Grover algorithm with one marked item. In the analog version, we use a \emph{Hamiltonian} oracle $C$ which is diagonal in the item basis and assigns energies of $-1$ to marked items and $0$ to unmarked items:
+\begin{equation}
+  C = -\suml{i=0}{m-1}{\ket{\str{x_i}}\bra{\str{x_i}}}
+  \label{eq:oracle}
+\end{equation}
+where $\str{x_i}$ are bitstrings labeling the marked items. In standard Grover, the other unitary operator used is reflection about the equal superposition state $\ket{\psi}$. A direct analog analogue would be to use the Hamiltonian that generates this unitary under a $\pi$ rotation,
+\begin{equation}
+  H = \id - \ket{\psi}\bra{\psi}
+  \label{eq:groverDiff}
+\end{equation}
+In the past, (\ref{eq:groverDiff}) has been used as the mixing operator for analog Grover, e.g. in \cite{Farhi2000,Roland2003}. However, this operator is not local and practical implementations which decompose one application of it into two-qubit gates will considerably increase the gate depth of the circuit. Therefore, the use of a local mixing operator, such as the transverse field Ising Hamiltonian used in \cite{Jiang2017, Kato2005}, is practically well-motivated. While this does not guarantee an efficient gate decomposition for the oracle, it removes additional overheads in gate complexity from the part of the circuit outside the black box. Therefore, we will this mixer, up to an energy shift of $n$: 
+\begin{equation}
+  B = n\id - \suml{i=1}{n}{X_i}
+  \label{eq:mixer}
+\end{equation}
+Perhaps surprisingly, the Grover speed-up can be shown in this restricted computational model of using the Hamiltonian oracle and only 1-local operations in addition, in the case where there is only one marked item. For the case of multiple marked items, both \cite{Jiang2017, Kato2005} observed that the performance of QAOA seemed to depend on the Hamming distances between the marked items. In this work, we provide a concrete theoretical characterization of this dependence, and, by understanding how it affects the QAOA protocol, provide a way to make QAOA with the 1-local mixer succeed on multple-marked item instances.
+
+\section{Background and notation}
+
+Before starting calculations for the multiple marked item case, here are some additional notes on notation and lemmas to be used:
+\begin{enumerate}
+\item For any positive integer $n$, we use the shorthand $[n]:= \curly{0,1,\ldots, n}$. Replacing the left or right bracket by a parenthesis will correspond to excluding either $0$ or $n$ from the set, so that $(n] = \curly{1,\ldots, n}$. In particular, $[1] = \curly{0,1}$, and $[1]^n$ is the set of all $n$-length bitstrings.
+\item We will always denote bitstrings by boldface variables, such as $\str{x}, \str{z}$ etc. The bits in a given bitstring will be denoted by the corresponding plain variable indexed by the position of the bit. So, we have $\str{x} = x_1x_2\cdots x_n$, $\str{x} = z_1z_2\cdots z_n$, etc., with $x_i, z_i \in [1]$. The all-zero and all-one bitstrings will be denoted by $\str{0} = 00\cdots 0$ and $\str{1} = 11\cdots 1$, respectively. Lastly, the \emph{Hamming weight} of a bitstring $\str{z}$ is the $1$-norm of $\str{z}$, or, the number of ones in $\str{z}$. It will be denoted by $|\str{z}|$, or simply $z$ when clear from context. 
+\item It will be convenient to introduce the
+  following notation: for any bitstring $\str{z}\in[1]^n$,
+  the corresponding \emph{bit flip operator} will be denoted $X^{\str{z}} := \bigotimes_{i=1}^{n}X^{z_i}$. So,
+$$X^{\str z}\ket{\str y} = \ket{\str y\oplus \str z}
+$$
+and in particular, $\ket{\str z} = X^{\str{z}}\ket{\str 0}$. Finally, for the Grover problem with $m$ marked items labelled $\str{x_0},\str{x_1},\ldots, \str{x_{m-1}}$, define $\bar{X} := \suml{i=0}{m-1}{X^{\str{x_i}}}$. (Note that each of the $\str{x_i}$ are bitstrings, not bits.)
+\item In the bit shift notation, the Hamiltonian oracle and corresponding unitary can be expressed
+  \begin{align}
+    \label{eq:bitshiftoracle}
+    C &= -\suml{i=0}{m-1}{X^{\str{x_i}}\ket{\str{0}}\bra{\str{0}}}X^{\str{x_i}}\\
+    e^{-i\gamma C} &= \id - \omega_\gamma\suml{i=0}{m-1}{X^{\str{x_i}}\ket{\str{0}}\bra{\str{0}}}X^{\str{x_i}}
+  \end{align}
+where we set $\omega_\gamma:= 1-e^{i\gamma}$.
+%\item We will set $\gamma=\pi$ and assume that $\beta \ll 1$. 
+\item We will use the shorthand $\mc{C}\paren{\gamma} = e^{-i\gamma C}$, and $\mc{B}\paren{\beta} = e^{-i\beta B}$. Further, $\mc{C}\equiv\mc{C}\paren{\pi} \equiv \mc{C}\paren{-\pi}$. 
+\item The two unitaries $\mc{B}, \mc{C}$ act on the equal superposition in the following manner:
+  \begin{align}
+\mc{B}\paren{\beta}\ket{\psi} &= \ket{\psi}\\
+\mc{C}\paren{\gamma}\ket{\psi}&= \ket{\psi} - \frac{\omega_\gamma}{\sqrt{N}}\suml{i=0}{m-1}{\ket{\str{x_i}}} = \ket{\psi} - \frac{\omega_\gamma}{\sqrt{N}}\bar{X}\ket{\str{0}}  \\
+\text{In particular, }\ \mc{C}\ket{\psi} &= \ket{\psi} - \frac{2}{\sqrt{N}}\bar{X}\ket{\str{0}}
+  \end{align}
+\item It will be useful to know how $\mc{B}\paren{\beta}$ acts on the $\ket{\str{0}}$ state. While the exact form is derived in appendix \ref{appendix:appB}, we first observe that the diffusion operator preserves \emph{Hamming symmetry}: if the initial state is invariant under bit permutations, then so is the final state. Since $\ket{\str{0}}$ is a Hamming symmetric state, it must be possible to write $\mc{B}\paren{\beta}\ket{\str{0}}$ as a sum over symmetrized states of Hamming weight $w$ given by 
+  \begin{equation}
+    \ket{w} := \frac{1}{\sqrt{\binom{n}{w}}}\suml{|\str{x}|=w}{}{\ket{\str{x}}}
+    \label{eq:hambasis}
+\end{equation}
+
+Therefore, 
+\begin{equation}
+\mc{B}\paren{\beta}\ket{\str{0}} = \suml{w=0}{n}{f(w)\ket{w}}
+\end{equation}
+for some function $f$ which, as mentioned, is derived in Appendix \ref{appendix:appB}. 
+\item Finally,
+  \begin{equation}
+    \mc{B}\paren{\beta}\mc{C}\paren{\gamma}\ket{\psi} = \ket{\psi} - \frac{\omega_\gamma}{\sqrt{N}}\bar{X}\suml{w=0}{n}{f(w)\ket{w}}
+    \label{eq:bc}
+\end{equation}
+where $f(w)$ is as defined in the previous point, and we implicitly used the fact that $\mc{B}$ and $\bar{X}$ are diagonal in the Pauli X basis, and there mutually commute. Next, we write this expression in a more suggestive form. Noting that the equal superposition state is invariant under the $\bar{X}$ operator up to a factor of $m$,
+$$
+\ket{\psi} = \frac{1}{m}\bar{X}\ket{\psi}
+$$
+we have in the symmetric basis
+$$
+\ket{\psi} = \bar{X}\suml{w=0}{n}{\frac{\sqrt{\binom n w}}{m\sqrt{N}}\ket{w}}
+$$
+
+Then, collecting terms in Eq.~\ref{eq:bc},
+\begin{equation}
+  \label{eq:bccanonical}
+  \mc{B}\paren{\beta}\mc{C}\paren{\gamma}\ket{\psi} = \bar{X}\suml{w=0}{n}{g(w)\ket{w}}
+\end{equation}
+
+where $$g(w) = \frac{1}{\sqrt{N}}\paren{\frac{\sqrt{\binom n w}}{m} - \omega_\gamma f(w)}$$
+
+Therefore, we see that after one QAOA iteration, the support of the state is on what we may call the \emph{displaced symmetric subspace} (DSS) spanned by the states $\curly{X^{\str{x_i}}\ket{w}: i\in [m), w\in [n]}$. A total of $m(n+1)$ states span the DSS, and its dimension is therefore much smaller than the full Hilbert space dimension $N$, when $m\ll N$. This is a key observation, and is discussed further in Sec. \ref{sec:mpolyn}. We will call the form of writing the state as in Eq.~\ref{eq:bccanonical} the canonical form.
+\end{enumerate}
+Lastly, we give a quick review of the single-marked item QAOA protocol used in \cite{Jiang2017}.
+\begin{itemize}
+\item Start in the equal superposition state $\ket{\psi}\equiv\ket{+}^{\otimes n}$.
+\item Apply the unitary $W\paren{\beta,\gamma}=e^{-i\beta B}e^{i\gamma C}e^{-i\beta B}e^{-i\gamma C}$ for a total of $O(\sqrt{N})$ iterations.
+\item Measure in the computational basis. The expected success probability is (asymptotically) $0.5$.
+\end{itemize}
+So, there are $O(\sqrt{N})$ rounds, each consisting of four unitary gates $e^{-i\gamma C},e^{-i\beta B}, e^{i\gamma C}, e^{-i\beta B}$ (to be applied in that order). While $\beta,\gamma$ are parameters to be optimized, the choice $\gamma=\pi, \beta=\pi/n$ is shown to be successful at finding the marked state. The same protocol is not guaranteed to succeed for the case of multiple marked items, since the analysis becomes considerably harder and involves the knowledge of the Hamming distances between the marked items. In the following work, we make this dependence precise [WELL, NOT 100\% THERE YET], and argue that it can be made sufficiently ``tame'', allowing the single-marked item protocol to apply to the general case. And now, we now present the main ideas that make this generalization possible, without further ado. 
+
+\section{QAOA for multiple marked item Grover}
+
+In the last section, it was observed that after one QAOA iteration, the state can be written in the canonical form of Eq.~\ref{eq:bccanonical}. It would be nice if this statement could hold for further QAOA iterations as well. In that case, we could keep track of the state overlap on the support subspace efficiently in $n$, and compute the success probability at the end of $T$ iterations, for an arbitrary $T$. For a successful Grover protocol, $T\sim O(\sqrt{N})$, so the entire computation would have the same time complexity as the query complexity of Grover, up to log factors. This ``one-time cost'' would hopefully guide the QAOA parameter setting for all future Grover instances.
+
+Unfortunately, this hope is squandered in the very next step of QAOA, for a general problem instance. We have
+\begin{equation}
+  \label{eq:cbc}
+  \mc{C}\paren{\gamma\pr}\mc{B}\paren{\beta}\mc{C}\paren{\gamma}\ket{\psi} = \mc{C}\paren{\gamma\pr}\bar{X}\suml{w=0}{n}{g(w)\ket{w}}
+\end{equation}
+In order to evaluate this expression further, note that the operator $\mc{C}\paren{\gamma\pr}$ applies a trivial phase of $1$ to all un-marked item states, and a phase of $e^{i\gamma\pr}$ to all marked item states. Therefore, we only need to isolate the marked states in the expression, and then we can write
+\begin{equation}
+  \label{eq:cbcsimple}
+  \mc{C}\paren{\gamma\pr}\mc{B}\paren{\beta}\mc{C}\paren{\gamma}\ket{\psi} = \bar{X}\suml{w=0}{n}{g(w)\ket{w}} - \omega_{\gamma\pr}\cdot\brac{\bar{X}\suml{w=0}{n}{g(w)\ket{w}}}_{\text{marked only}}
+\end{equation}
+Now, the expression $\bar{X}\suml{w=0}{n}{g(w)\ket{w}}$ can be expressed as a sum over the bitstrings $\ket{\str{z}\oplus \str{x_i}}$ for all $\str{z}\in[1]^n$, and for all $i=0,\ldots,m-1$. Explicitly, 
+$$
+\bar{X}\suml{w=0}{n}{g(w)\ket{w}} = \suml{i=0}{m-1}{\suml{\str{z}\in[1]^n}{}{\frac{g\paren{z}}{\sqrt{\binom{n}{z}}}\ket{\str{z}\oplus \str{x_i}}}}
+$$
+From the above sum, we wish to look at bitstrings that correspond to marked states. In other words, we are interested in strings $\str{z}$ s.t. $\str{z}\oplus \str{x_i} =\str{x_j} $ for some $i,j$. Since bitwise addition is involutive, the set of such strings $\str{z}$ is precisely $\curly{\str{d_{ij}}:=\str{x_i}\oplus\str{x_j}: i,j\in [m)}$. Therefore, Eq.~\ref{eq:cbcsimple} becomes
+\begin{align}
+  \label{eq:cbcfinal}
+  \mc{C}\paren{\gamma\pr}\mc{B}\paren{\beta}\mc{C}\paren{\gamma}\ket{\psi} &= \bar{X}\suml{w=0}{n}{g(w)\ket{w}} - \omega_\gamma\suml{i,j}{}{\frac{g\paren{d_{ij}}}{\sqrt{\binom{n}{d_{ij}}}}\ket{\str{x_j}}}\\
+  &= \bar{X}\suml{w=0}{n}{g(w)\ket{w}} - \omega_\gamma\underbrace{\paren{\suml{i,j}{}{\frac{g\paren{d_{ij}}}{\sqrt{\binom{n}{d_{ij}}}}X^{\str{x_j}}}}}_{\tilde{X}}\ket{\str{0}}
+\end{align}
+Now we see the problem: if the operator $\tilde{X}$ (marked by the underbrace) is proportional to $\bar{X}$, then the above state is expressible in the canonical form, since the state $\ket{\str{0}} \propto \ket{w=0}$ is already a symmetric state. However, if $\tilde{X}$ is not proportional to $\bar{X}$ (which it isn't in general), the state has different amplitudes on different $X^{\str{x_j}}$, and can no longer be written in the canonical form.
+
+However, notice that the state still has support only on the displaced symmetric states $X^{\str{x_i}}\ket{w}$. In fact, the next step of applying $\mc{B}\paren{\beta}$ (and indeed all future QAOA steps) will preserve this property of the state. While this form isn't as compact as Eq. \ref{eq:bccanonical}, it is indeed a low-rank description of the state when $m\ll N$. In the coming section, we will describe the QAOA dynamics in this reduced state description. Later in Sec. \ref{sec:hom}, we will argue that the canonical form can in fact be recovered if we impose a condition known as \emph{homogeneity} for the marked item distribution. 
+
+\subsection{Reduction to the Displaced Symmetric Subspace (DSS)}
+\label{sec:mpolyn}
+
+Let us introduce a slightly overloaded but helpful notation for the displaced symmetric state,
+\begin{equation}
+  X^{\str{x}}\ket{w} := \ket{w\oplus \str{x}},\ \text{ for some Hamming weight $w$, and string $\str{x}$.}
+\end{equation}
+To recap, the DSS is the space spanned by the above states, i.e.,
+\begin{equation}
+  \text{DSS} = \text{span}\curly{\ket{w\oplus\str{x_i}}: w\in [n], i\in [m)}
+  \label{eq:DSSdefn}
+\end{equation}
+Since we know that a general QAOA protocol has a low-rank description on the DSS, we will constrain our notation to reflect this fact. At step $t$ of the QAOA protocol (where each step is an application of $\mc{C}$ followed by an application of $\mc{B}$), let the state be given by
+\begin{equation}
+  \ket{\psi_t} = \suml{w\in [n],i\in [m)}{}{A^{(t)}_{wi}\ket{w\oplus\str{x_i}}}
+\end{equation}
+After ``$t$ and a half'' steps, i.e., after $t$ full steps of QAOA and an additional application of $\mc{C}$, call the state
+\begin{equation}
+  \ket{\psi_{t.5}} = \suml{w\in [n],i\in [m)}{}{A^{(t.5)}_{wi}\ket{w\oplus\str{x_i}}}
+\end{equation}
+So, we now have to keep track of how the rank-2 tensor $A_{wi}$ of dimension $m(n+1)$ evolves during QAOA. Under $\mc{C}\paren{\gamma}$ and $\mc{B}\paren{\beta}$, we have
+\begin{align}
+  \label{eq:transC}
+  A_{wi} &\underset{\mc{C}\paren{\gamma}}{\longrightarrow}
+  \begin{cases}
+    A_{0i} - \omega_\gamma\suml{j\in [m)}{}{\frac{A_{a_{ij} j}}{\sqrt{\binom{n}{a_{ij}}}}}, &\text{ if } w=0\\
+    A_{wi}, &\text{ if } w>0.
+  \end{cases}\\
+  \label{eq:transB}
+  A_{wi} &\underset{\mc{B}\paren{\beta}}{\longrightarrow} \suml{v\in [n]}{}{\mc{D}(\beta)_{wv}A_{v i}}.
+\end{align}
+where $\mc{D}(\beta)$ is the diffusion operator on the symmetric subspace (see Appendix~\ref{appendix:appB}). So, we see that the DSS dynamics depend on the distribution of the Hamming distances of all marked states from one another, i.e. the distances $d_{ij}$ for $i,j\in [m)$.
+
+Now, we write the action of operators $\mc{B}, \mc{C}$ in terms of matrices acting on the representation of the state in the DSS, taking directly from Eq. \ref{eq:transB} and \ref{eq:transC}. We label the corresponding matrices $\tilde{\mc{B}}, \tilde{\mc{C}}$. First, let $\chi^{w}$ be an $(n+1)\times (n+1)$ matrix with $\frac{1}{\sqrt{\binom n w}}$ in the $\paren{0,i}$-th entry, and zeros elsewhere, i.e.,
+\begin{equation}
+  \chi^{w} :=
+  \begin{pmatrix}
+    0 & \overbrace{\cdots}^{w} & \frac{1}{\sqrt{\binom n w}} & \overbrace{\cdots}^{n-w} & 0\\
+    0 & \ddots  & \cdots & \cdots & 0\\
+    \vdots &\cdots & 0 & \cdots & \vdots\\
+    \vdots & \cdots & \cdots & \ddots & \vdots\\
+    0 & \cdots & 0 & \cdots & 0\\
+  \end{pmatrix}
+\end{equation}
+
+Recall that $\mc{D}$ is the diffusion matrix on the symmetric subspace spanned by $\curly{\ket{w}: w\in [n]}$. With these auxiliary matrices, we can write
+\begin{align}
+  \label{eq:Bexplicit} 
+  \tilde{\mc{B}}(\beta) &=
+    \begin{pmatrix}
+    e^{-i\beta\mc{D}} &&\\
+    & e^{-i\beta\mc{D}} &\\
+    && \ddots        &\\
+    &&& e^{-i\beta\mc{D}}
+  \end{pmatrix} \\
+  \label{eq:Cexplicit}
+  \tilde{\mc{C}}(\gamma) &= \id - \omega_{\gamma} \begin{pmatrix}
+    \chi^{d_{00}} & \chi^{d_{01}}& \cdots & \chi^{d_{0 \paren{m-1}}}  \\
+    \chi^{d_{10}} & \chi^{d_{11}} &\cdots & \chi^{d_{1 \paren{m-1}}}   \\
+    \vdots & \cdots & \ddots & \vdots \\
+    \chi^{d_{\paren{m-1} 0}} & \chi^{d_{\paren{m-1} 1}} &\cdots & \chi^{d_{\paren{m-1} \paren{m-1}}}   \\
+  \end{pmatrix}   \\
+  \label{eq:Pexplicit}
+  &=: \id - \omega_\gamma\mc{P} 
+\end{align}
+
+where there are $m$ blocks in each row an column of the above matrices, and each block is of dimensions $\paren{n+1}\times\paren{n+1}$. So, we see that both matrices have sparse structure. Finally, we will show that $\mc{P}$, defined above, is in fact an idempotent operator, i.e., $\mc{P}^2 = \mc{P}$. This will allow us to write $\tilde{\mc{C}}(\gamma) = e^{-i\gamma \mc{P}}$. [NOT SURE IF THIS IS USEFUL; OH WELL, SEEMS LIKE A NICE PROPERTY.]
+
+\begin{lemma} 
+  The matrix $\mc{P}$, defined in Eq.~\ref{eq:Pexplicit}, is idempotent, i.e., $\mc{P}^2 = \mc{P}$.
+\end{lemma}
+\begin{proof}
+ The $(i,j)$-th entry of the product $\mc{P}^2$ may be expressed as
+ \begin{equation}
+   [\mc{P}^2]_{ij} = \suml{k}{}{\chi^{d_{ik}}\chi^{d_{kj}}}
+ \end{equation}
+ So, we need to know the form of the product $\chi^{w}\chi^{v}$ for two arbitrary weights $w,v\in [n]$. However, the sparseness of the $\chi$ matrices yields the simple expression
+ \begin{equation}
+   [\chi^{w}\chi^{v}]_{ij} = \delta_{i0}\delta_{jv}\delta_{w0}\frac{1}{\sqrt{\binom n w}}\frac{1}{\sqrt{\binom n v}} \implies \chi^{w}\chi^{v} = \delta_{w0}\chi^{v}
+ \end{equation}
+Secondly, we use the property that two marked items indexed $i,k$ have Hamming distance $d_{ik}=0$ if and only if $i=k$ (that is, iff they are in fact the same item). Then, we have
+ \begin{equation}
+   [\mc{P}^2]_{ij} = \suml{k}{}{\chi^{d_{ik}}\chi^{d_{kl}}} = \chi^{0}\chi^{d_{ij}} = \chi^{d_{ij}} = [\mc{P}]_{ij}
+ \end{equation}
+for all marked indices $i,j$. Therefore, $\mc{P}^2 = \mc{P}$ and the proof is complete.   
+\end{proof}
+
+We point out that in the special case where we fix $\beta_t = \beta$ and $\gamma_t = \gamma$ for all steps $t$, the full Grover operator becomes $\paren{\mc{B}\paren{\beta}\mc{C}\paren{\gamma}}^T$, which can be computed in time $O(\text{poly}(n))$ by exact diagonalization. This simplification is well-motivated, since the original one-marked item QAOA protocol involves identical $\beta, \gamma$ at each step. 
+
+Looking at Eq. \ref{eq:transC}, \ref{eq:transB}, we see that if all the marked items were distributed identically w.r.t any given marked item, then the dynamics of $A_{wi}$ would be identical for all $i$. This property would then allow us to ``collapse'' the state description even further, and we would essentially recover the canonical form of Eq. \ref{eq:bccanonical}. We call this property homogeneity, and discuss it in the next section.
+
+\subsection{Marked items are mutually homogeneous}
+\label{sec:hom}
+
+
+In this simplification, we assume that for any marked string $\str{x_i}$, there is a distribution $p_w, w\in [n]$ such that the number of strings $\str{x}_j$ at a distance $w$ from $\str{x_i}$ is $p_w$, and $p_0=1$ by default. Therefore, the distribution of the marked strings is ``homogeneous'' in that it appears identical from the perspective of any marked string. In other words, $\curly{d_{ij}: j\in[m)}$ is the same set for every $i$. Note that homogeneity is not exactly a special case of the previous section, since $m$ can be large here.
+
+While it may seem artificial, homogeneity (or at least, approximate homogeneity) is well-motivated. This is because asymptotically in $n$, the distance between two randomly chosen bitstrings is sharply peaked around $n/2$ and follows a binomial distribution. When $m \ll N$, and the marked items are distributed typically (or pre-permuted so as to have a typical distribution), every distance $d_{ij}$ can be assumed to be an independent sample of the same binomial distribution. For each $i$, the $m$ samples $d_{ij}$, for $j\in [m)$, will then trace out the same sharply peaked binomial distribution, and we expect approximate homogeneity to hold across all $i$.
+
+Homogeneity ensures that the canonical form is preserved at every step of QAOA. This allows us to track the state evolution efficiently in $n$ for an arbitrary number of marked items (as long as they are mutually homogeneous). Previously, the coefficient tensor $A$ depended on the the weight $w$ as well as the marked item index $i$. Now, we have $A_{w0} = A_{w1} = \cdots = A_{w (m-1)} =: A_w$. So, the state can be expressed via the rank-1 tensor $A_w$,
+\begin{equation}
+  \ket{\psi_t} = \bar{X}\suml{w\in[n]}{}{A^{(t)}_w\ket{w}}
+\end{equation}
+
+and similarly for the intermediary half-steps. The tensor evolves under $\mc{C}, \mc{B}$ as follows:
+\begin{align}
+  A_{w} &\underset{\mc{C}\paren{\gamma}}{\longrightarrow}
+  \begin{cases}
+    A_{0} - \suml{v\in [n]}{}{p_v\frac{A_v}{\sqrt{\binom{n}{v}}}}, &\text{ if } w=0.\\
+    A_{w}, &\text{ if } w>0
+  \end{cases}\\
+ A_{w} &\underset{\mc{B}\paren{\beta}}{\longrightarrow} \suml{v\in [n]}{}{\mc{D}(\beta)_{wv}A_{v}}
+\end{align}
+
+\subsection{Success Probability}
+
+The success probability for the state at time $T$ is given by the squared sum of amplitudes on marked item states. Each marked item state $\ket{\str{x_i}}$ has amplitude contributions from displaced states of the form $\ket{d_{ij}\oplus \str{x_j}}$ for all $j$. The sum then goes over all such states,
+\begin{equation}
+  \label{eq:probsuccess}
+  P(\text{success}) = \suml{i\in [m)}{}{\paren{\suml{j\in [m)}{}{\frac{A^{(T)}_{d_{ij} j}}{\sqrt{\binom{n}{d_{ij}}}}}}^2}
+\end{equation}
+
+When homogeneity holds, the probability can be expressed as
+\begin{equation}
+  \label{eq:probsuccesshom}
+  P(\text{success}) = \suml{i\in [m)}{}{\paren{\suml{w\in [n]}{}{p_w\frac{A^{(T)}_{w}}{\sqrt{\binom{n}{w}}}}}^2}
+\end{equation}
+
+\section{Impurity band model}
+\label{sec:imp}
+
+Now, we work towards generalizing the above methods to other cost functions. Here, we will look at the impurity band model (name subject to change). Here, we assume that instead of $m$ marked items, we now have $m$ ``impurity'' configurations for which the potential is non-zero, and zero for all other bitstring configuration. So, for every impure string $\str{x_i}$, there is an associated potential $c_i$ (which is $-1$ for Grover). Naturally, we may defined a \emph{phased} bitshift operator
+
+\begin{equation}
+\bar{X}\paren{\gamma} := \suml{i\in[m)}{}{e^{-i\gamma c_i}X^{\str{x_i}}} 
+\end{equation}
+
+Note that $\bar{X}\paren{0} \equiv \bar{X}$ from the previous sections, so the new notation is consistent. Also, the impurity band model is capable of describing any potential landscape, since we could just call each bitstring $\str{x}$ an impurity and assign a potential $c_\str{x}$ to it. In that case, there would be $2^n$ impurity configurations. Therefore, keeping $m$ arbitrary allows us to talk about a general problem instance.
+
+Now, the transformations of an intermediate amplitude $A_{wi}$ under $\mc{B},\mc{C}$ can be written as
+\begin{align}
+  \label{eq:imptransC}
+  A_{wi} &\underset{\mc{C}\paren{\gamma}}{\longrightarrow}
+  \begin{cases}
+    A_{0i} - \suml{j\in [m)}{}{e^{-i\gamma c_{j}}\frac{A_{a_{ji} i}}{\sqrt{\binom{n}{a_{ji}}}}}, &\text{ if } w=0\\
+    A_{wi}, &\text{ if } w>0.
+  \end{cases}\\
+  \label{eq:imptransB}
+  A_{wi} &\underset{\mc{B}\paren{\beta}}{\longrightarrow} \suml{v\in [n]}{}{\mc{D}(\beta)_{wv}A_{v i}}.
+\end{align}
+
+Finally, the state we ``care about'' is the global minimum, i.e., the impurity $i^*$ for which the cost $c_{i^*}$ is the smallest. 
+
+\section{Some rough work}
+
+Here, I will explore a recent idea: in general for a random multiple item instance, one can say that the Hamming distances between strings will be sampled from a Binomial distribution centered at $n/2$, with a spread of $\sim \sqrt{n}$. However, there is no promise on the minimum distance between any two distinct marked items, which could be anywhere between $1$ and $n$.
+
+Suppose we had such a promise on the minimum distance. Could a sufficiently high lower bound guarantee the success of QAOA Grover on the $m$-item instance?
+
+This question seems well-motivated by empirics, where we have observed that instances where strings are close to one another behave ``irregularly'', in the sense that the final probability time curve shows multi-period sinusoidal behaviour, and the peak success is often lower. In the worst case, when two strings are at a distance $d=1$ from each other, the protocol seems to fail to produce a constant success probability.
+
+Apart from empirical motivation, there is some mathematical motivation to impose a lower bound on $d_{ij}$: the contributions of marked item $j$ on the amplitude on marked item $i$ is via the diffusion operator $\mc{B\paren{\beta}}$. When the separation between $i,j$ is $d_{ij} = d$, and the evolution angle $\beta \ll 1$, the matrix term is of order
+\begin{equation}
+  \mc{B}\paren{j\rightarrow i} \sim \paren{\cos\beta}^d \paren{i\sin\beta}^{n-d} \sim \beta^{d}
+\end{equation}
+Note that in the above, the combinatorial factor $1/\sqrt{\binom n d}$ has been ignored. The reason for this will become clear shortly.
+
+So, a lower bound on $d$ implies an upper bound on the cross terms between two marked items, and we sohuld expect the items to evolve more or less independently. To be more precise, when $\beta = \pi/ n$, we have
+\begin{equation}
+    \mc{B}\paren{j\rightarrow i} \sim \beta^{d} \sim 2^{-d\log n} 
+\end{equation}
+and a distance lower bound of $d > n/\log n$ implies an upper bound of $O(1/\text{poly}(N))$ on the matrix terms, which could be sufficient to show convergence between the one-marked item protocol and the $m$-marked item protocol, over a total of $\sqrt{N}$ rounds of Grover. This will be the goal of this section. In particular, we [TRY TO] show that
+\begin{theorem}
+  Let $\curly{\str{x_1},\str{x_1},\ldots, \str{x_m}}$ be the marked item labels of an $m$-item Grover instance. Then, there is a minimum distance $d_0(n,m)$, $0 < d_0 < n/2$, such that $d_{ij} = |\str{x_i}\oplus\str{x_j}| > d_0$ implies that QAOA on the m-item instance, with angle parameters $\paren{\beta, \gamma} = \paren{\pi/n, \pi}$, succeeds with constant probability in $O(\sqrt{N})$ rounds of QAOA.
+\end{theorem}
+\begin{proof}
+  As a first order of business, we will massage the DSS description into a form more amenable to analysis. Recall that the DSS is spanned by the states $\curly{\ket{w\oplus\str{x_i}}: w\in [n], i\in [m)}$. We will use the double-index $wi$ to denote the basis state $\ket{w\oplus\str{x_i}}$, so that a state is given by the amplitude vector $A_{wi}$, and an operator $\mc{O}$ by entries $\mc{O}_{wi,vj}$. Define the following normalization matrix
+  \begin{equation}
+    \label{eq:Normalization}
+    N_{wi, vj} = \delta_{wv}\delta_{ij}\frac{1}{\sqrt{\binom n w}} \equiv N_{ww}
+  \end{equation}
+So, $N$ is a diagonal matrix of combinatorial factors. Now, given a QAOA protocol as an alternating application of DSS operators $\tilde{\mc{C}},\tilde{\mc{B}}$ on the initial state $\ket{\tilde{\psi}_0}$ (also in DSS representation), we may normalize using $N$ as follows
+\begin{align}
+  N\ket{\tilde{\psi}_T} &= N \tilde{\mc{B}\paren{\beta}}\tilde{\mc{C}\paren{\gamma}}\cdots \tilde{\mc{B}\paren{\beta}}\tilde{\mc{C}\paren{\gamma}}\tilde{\mc{B}\paren{\beta}}\tilde{\mc{C}\paren{\gamma}}\ket{\tilde{\psi}_0}\\
+  &= \paren{N\tilde{\mc{B}}\tilde{\mc{C}}N^{-1}}\cdots \paren{N\tilde{\mc{B}}\tilde{\mc{C}}N^{-1}}\paren{N\tilde{\mc{B}}\tilde{\mc{C}}N^{-1}}\paren{N\ket{\tilde{\psi}_0}}
+\end{align}
+
+For the normalized version of the final state (which we also denote $\ket{\tilde{\psi}_T}$ by abuse of notation), the success probability is given by
+\begin{equation}
+  P(\text{success}) = \suml{i\in [m)}{}{\left|\paren{\suml{j\in [m)}{}{A^{(T)}_{d_{ij} j}}}\right|^2}
+\end{equation}
+
+Under normalization, the initial state becomes the 
+\end{proof}
+
+\section{QAOA succeeds for m item Grover}
+\label{sec:proof}
+
+In this section, we prove that a QAOA protocol successfully finds marked items in order $\sqrt{N/m}$ times for instances that satisfy a certain \emph{well-distributedness} criterion.
+\begin{definition}
+ We call a Grover search instance, specified by $m$ marked item locations $\str{z}_1, \str{z}_2,\ldots, \str{z}_m$, well-distributed, if any two marked items $i,j$ are separated by Hamming distance $|\str z_i\oplus \str z_j| \ge \bar d$, where $d = \frac{n + \log m}{2\log\paren{n/\pi}}$. 
+\end{definition}
+
+This definition will be motivated later, but in the following we assume that the instance is well-distributed. Then, we show the following statement.
+\begin{theorem}
+For any well-distributed instance of Grover, a QAOA circuit with $\beta_i = \beta = \pi/n$ and $\gamma_i=\gamma=\pi$ for all $i$ succeeds in O$(2^{n/2}/\sqrt{m})$ number of rounds   
+\end{theorem}
+
+
+
+\begin{appendices}
+\section{Diffusion on the all-zero string}
+\label{appendix:appA}  
+Here, we explicitly compute the function $f$, where
+$$
+e^{-i\beta B}\ket{\str{0}} = \suml{w=0}{n}{f(w)\ket{w}}
+$$
+
+\begin{align*}
+e^{-i\beta B}\ket{\str{0}}  = e^{-i\beta n}e^{-i\beta \sum_iX_i}\ket{\str{0}} &= e^{-i\beta n}\bigotimes_{i=1}^{n}\paren{\cos\beta\id + i\sin\beta X_i}\ket{\str{0}}\\ 
+                   = e^{-i\beta n}\suml{\str{x}\in[1]^n}{}{\paren{\cos\beta}^{\paren{n-x}}\paren{i\sin\beta}^{x}\ket{\str{x}}}&= e^{-i\beta n}\suml{w=0}{n}{\paren{\cos\beta}^{\paren{n-w}}\paren{i\sin\beta}^{w}\sqrt{\binom{n}{w}}\ket{w}}
+\end{align*}
+
+where in the last step we grouped terms with the same Hamming weight. Therefore, $f(w) = e^{-i\beta n}\paren{\cos\beta}^{\paren{n-w}}\paren{i\sin\beta}^{w}\sqrt{\binom{n}{w}}$.
+
+\section{Diffusion on a string of Hamming weight $w$}
+\label{appendix:appB}
+Now, we are interested in evaluating the expression 
+$$
+e^{-i\beta B}\ket{w}
+$$
+This is a harder case to analyze, since any $X$ string operator appearing in the expansion of $e^{-i\beta B}$ can either decrease or increase the Hamming weight depending on the location of the X flips. However, recall that the diffusion operator preserves Hamming symmetry - we will use this fact in the counting argument. Consider a bistring $\ket{\str{x}}$ with $w$ ones on the left followed by $n-w$ zeros. This is one of the weight $w$ states appearing in the symmetrized state $\ket{w}$. First, only look at terms in $e^{-i\beta B}$ which have a total weight of $v$ for some $v=0,1,\ldots,n$. In other words, terms of the form $\paren{\cos\beta}^{\paren{n-v}}\paren{i\sin\beta}^{v}X^{\str{z}}$ where $|\str{z}|=v$. WLOG, let $k$ of the $X$ operators overlap with the one substring of $\ket{\str{x}}$ and $v-k$ overlap with the zero substring. Note that range of $k$ is $k=\max\paren{0,w+v-n},\ldots , \min\paren{v,w}$. The state after the X string operator acts on $\ket{\str{x}}$ has weight $w+v-2k$. Now consider the following counting:
+\begin{itemize}
+\item The number of weight $w$ states $\ket{\str{x}}$ is $\binom{n}{w}$.
+\item For each weight $w$ state $\ket{\str{x}}$, there are $\binom{w}{k}\binom{n-w}{v-k}$ X string operators with total weight $v$ and an overlap of $k$ with the one region of $\ket{\str{x}}$.
+\item Therefore, there are $\binom{n}{w}\cdot\binom{w}{k}\binom{n-w}{v-k}$ states (with multiplicity) of weight $w+v-2k$ that arise from the diffusion operator acting on a weight $w$ state. 
+\item Since there are $\binom{n}{w+v-2k}$ states of weight $w+v-2k$, and we expect the final state to have Hamming symmetry, there must be a multiplicity of $\binom{n}{w}\binom{w}{k}\binom{n-w}{v-k}/\binom{n}{w+v-2k}$. So the (unnormalized) state $\ket{w}$ yields $\binom{n}{w}\binom{w}{k}\binom{n-w}{v-k}/\binom{n}{w+v-2k}$ copies of the (unnormalized) state $\ket{w+v-2k}$.
+\item The initial state has normalization denominator $\sqrt{\binom{n}{w}}$ and the final state has normalization $\sqrt{\binom{n}{w+v-2k}}$. Moreover, the $X$ string operator of weight $v$ has a coefficient of $\paren{\cos\beta}^{\paren{n-v}}\paren{i\sin\beta}^{v}$.
+\item Putting the combinatorial factors and normalization coefficients together, we get that 
+$$
+e^{-i\beta B}\ket{w} \rightarrow \paren{\cos\beta}^{\paren{n-v}}\paren{i\sin\beta}^{v}\binom{n-w}{v-k}\binom{w}{k}\sqrt{\frac{\binom{n}{w}}{\binom{n}{w+v-2k}}}\ket{w+v-2k}
+$$
+\end{itemize}
+Finally, we have 
+$$
+e^{-i\beta B}\ket{w} = \suml{v=0}{n}{\suml{k=\max\paren{0,w+v-n}}{\min\paren{w,v}}{\paren{\cos\beta}^{\paren{n-v}}\paren{i\sin\beta}^{v}\binom{n-w}{v-k}\binom{w}{k}\sqrt{\frac{\binom{n}{w}}{\binom{n}{w+v-2k}}}\ket{w+v-2k}}}
+$$
+
+
+We will write the above action using a diffusion operator $\mc{D}\paren{\beta}$, with $\mc{D}\paren{\beta}_{uv} := \bra{u}\mc{D}\paren{\beta}\ket{v}$ for any two Hamming-symmetric states $\ket{u},\ket{v}$.
+
+\section{Some results on the DSS}
+In Eq.~\ref{eq:Normalization}, we introduced a normalization matrix. Now, we will explicitly write the form of the normalized matrices $\bar{\mc B}$ and $\bar{\mc C}$. First, the matrices $\tilde{\mc B}$ and $\tilde{\mc C}$ are
+\begin{equation}
+  \tilde{\mc B}(\beta)_{wi,vj} = \delta_{ij}\mc{D}(\beta)_{wv}, \ \ \  \tilde{\mc C}(\gamma)_{wi,vj} = \delta_{wv}\delta_{ij} - \frac{\omega_\gamma}{\sqrt{\binom{n}{v}}}\delta_{w0}\delta_{vd_{ij}}  
+\end{equation}
+and the matrix $N$ is
+  \begin{equation}
+    N_{wi, vj} = \delta_{wv}\delta_{ij}\frac{1}{\sqrt{\binom n w}} \equiv N_{ww}
+  \end{equation}
+Therefore, the normalized matrices may be written as
+\begin{align}
+  \bar{\mc B}(\beta)_{wi,vj} &= N_{ww}\tilde{\mc B}(\beta)_{wi,vj} N_{vv}^{-1} = \sqrt{\frac{\binom{n}{v}}{\binom{n}{w}}}\mc{D}(\beta)_{wv}\delta_{ij}\\
+   \bar{\mc C}(\gamma)_{wi,vj} &= \delta_{wv}\delta_{ij} - N_{ww} \frac{\omega_\gamma}{\sqrt{\binom{n}{v}}}\delta_{w0}\delta_{vd_{ij}} N_{vv}^{-1} = \delta_{wv}\delta_{ij} - \omega_\gamma\delta_{w0}\delta_{vd_{ij}}
+\end{align}
+
+
+For any state with (normalized) DSS amplitudes $A_{wi}$, the success probability is given by $\suml{i\in [m)}{}{\left|\paren{\suml{j\in [m)}{}{A_{d_{ij} j}}}\right|^2}$. This can also be written as
+\end{appendices}
+
+\bibliography{mmGrover}
+\bibliographystyle{plain}
+\end{document}

@@ -1,0 +1,25 @@
+\begin{thebibliography}{1}
+
+\bibitem{Farhi2000}
+Edward Farhi, Jeffrey Goldstone, Sam Gutmann, and Michael Sipser.
+\newblock {Quantum Computation by Adiabatic Evolution}.
+\newblock jan 2000.
+
+\bibitem{Jiang2017}
+Zhang Jiang, Eleanor~G. Rieffel, and Zhihui Wang.
+\newblock {Near-optimal quantum circuit for Grover's unstructured search using
+  a transverse field}.
+\newblock feb 2017.
+
+\bibitem{Kato2005}
+G.~Kato.
+\newblock Grover-algorithm-like operator using only single-qubit gates.
+\newblock {\em Phys. Rev. A}, 72:032319, Sep 2005.
+
+\bibitem{Roland2003}
+J{\'{e}}r{\'{e}}mie Roland and Nicolas~J Cerf.
+\newblock {Quantum circuit implementation of the Hamiltonian versions of
+  Grover's algorithm}.
+\newblock 2003.
+
+\end{thebibliography}

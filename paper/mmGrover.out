@@ -1,0 +1,13 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Background and notation}{}% 2
+\BOOKMARK [1][-]{section.3}{QAOA for multiple marked item Grover}{}% 3
+\BOOKMARK [2][-]{subsection.3.1}{Reduction to the Displaced Symmetric Subspace \(DSS\)}{section.3}% 4
+\BOOKMARK [2][-]{subsection.3.2}{Marked items are mutually homogeneous}{section.3}% 5
+\BOOKMARK [2][-]{subsection.3.3}{Success Probability}{section.3}% 6
+\BOOKMARK [1][-]{section.4}{Impurity band model}{}% 7
+\BOOKMARK [1][-]{section.5}{Some rough work}{}% 8
+\BOOKMARK [1][-]{section.6}{QAOA succeeds for m item Grover}{}% 9
+\BOOKMARK [1][-]{section*.1}{Appendices}{}% 10
+\BOOKMARK [1][-]{Appendix.1.A}{Appendix Diffusion on the all-zero string}{}% 11
+\BOOKMARK [1][-]{Appendix.1.B}{Appendix Diffusion on a string of Hamming weight w}{}% 12
+\BOOKMARK [1][-]{Appendix.1.C}{Appendix Some results on the DSS}{}% 13
